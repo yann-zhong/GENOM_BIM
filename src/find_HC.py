@@ -9,13 +9,22 @@ def binarization(seq):
             output += '0'
     return output
 
-def find_intervals(seq):
+def find_intervals(seq_bin, seq_aa):
     boundaries = set()
-    for i in range(len(seq)-3):
-        if seq[i:i+4]=='0000':
+    for i in range(len(seq_bin)-3):
+        if seq_bin[i:i+4]=='0000':
             for j in range(4):
                 boundaries.add(i+j)
-    return boundaries # complexity : (n-3)+4*#boundaries
+    for i in range(len(seq_aa)):
+        if seq_aa[i]=='P':
+            boundaries.add(i)
+            j=1
+            while i+j<len(seq_bin):
+                if seq_bin[i+j]=='1':
+                    break
+                boundaries.add(i+j)
+                j+=1
+    return boundaries # complexity = (n-3)+4*#boundaries
 
 def get_HC(seq, boundaries):
     structs = []
@@ -23,7 +32,7 @@ def get_HC(seq, boundaries):
     for i in range(len(seq)):
         if i not in boundaries:
             struct += seq[i]
-        elif struct!='':
+        elif len(struct)>1:
             structs.append(struct)
             struct = ''
     return structs
@@ -50,13 +59,14 @@ def binary_coding(seq):
     seq = seq.replace('.', '')
     seq = seq.replace('-', '')
     # transform into binary sequence
-    seq2 = binarization(seq)
+    seq_bin = binarization(seq)
     # find boundaries where there are not particular structure (helix or sheet)
-    boundaries = find_intervals(seq2)
+    boundaries = find_intervals(seq_bin, seq)
     # get potential structures
-    structs = get_HC(seq2, boundaries)
+    structs = get_HC(seq_bin, boundaries)
     # get Q-codes
     Q_codes = get_Q_codes(structs)
+    
     return structs, Q_codes
 
 def read_data(file):
@@ -66,6 +76,7 @@ def read_data(file):
     for line in f.readlines():
         if line[0]=='/':
             data.append(data_i)
+            data_i=[]
         elif line[0]!='#':
             data_i.append(line.split()[1])
     f.close()
