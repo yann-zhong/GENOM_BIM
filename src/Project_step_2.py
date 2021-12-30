@@ -4,6 +4,7 @@ from time import time
 #PLEASE RUN Project_step_1.py before running that
 os.chdir("C:/Users/Alexis Trang/Documents/Cours_UPMC_M2/GENOM")
 pfam_mapping=open("pdb_pfam_mapping.txt",'r')
+
 t1=time()
 Pfam_accessions=[]
 
@@ -16,6 +17,7 @@ line=pfam_mapping.readline()
 
 
 while line!="":
+    soluble_domains_with_pfam_file=open("soluble_domains_pfam_accession.txt","a")
     line=line.split()
     if line[0] in PDBs:
         indices_PDBs=[ind for ind in range(len(PDBs)) if PDBs[ind]==line[0]]
@@ -26,15 +28,16 @@ while line!="":
 
             if soluble_domains[i].chain==line[1]:
                 #print("MATCH")
-                soluble_domains[i].Pfam_accession=line[4]
+                soluble_domains_with_pfam_file.write(soluble_domains[i].ID+"\t"+soluble_domains[i].SCOPe+"\t"+soluble_domains[i].domain+"\t"+soluble_domains[i].PDB+"\t"+soluble_domains[i].chain+"\t"+str(soluble_domains[i].location)+"\t"+line[4]+"\n")
                 PDBs[i]=-1
+    soluble_domains_with_pfam_file.close()
             #print(soluble_domains[i].PDB)
         #print("###################\n*\n*\n*\n*\n*\n*")
 
         #print(line[0],line[4])
     line=pfam_mapping.readline()
 
-
+soluble_domains_with_pfam_file.close()
 pfam_mapping.close()
 print(time()-t1)
 

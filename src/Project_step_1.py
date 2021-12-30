@@ -23,6 +23,7 @@ soluble_domains=[]  #List of domains
 PDBs=[]   #List of PDB codes of soluble domains
 
 scope_file=open("dir.des.scope.2.08-stable.txt",'r')
+soluble_domains_file=open("soluble_domains.txt",'w')
 
 for i in range(5):
     line=scope_file.readline()
@@ -35,15 +36,18 @@ while(line!=""):
         if re.findall(r" [A-Z]:",line[4])==[]:
             soluble_domains.append(Domain(line[0],line[2],line[3],line[4]))
             PDBs.append(line[4])
+            soluble_domains_file.write(line[0]+"\t"+line[2]+"\t"+line[3]+"\t"+line[4]+"\n")
         else:
             PDB=re.findall(r".+ ",line[4])[0][:-1]
             chain=re.findall(r"[A-Z]:",line[4])[0][0]
             location=re.findall(r"[0-9]+-[0-9]+",line[4])
             soluble_domains.append(Domain(line[0],line[2],line[3],PDB,chain,location))
             PDBs.append(PDB)
+            soluble_domains_file.write(line[0]+"\t"+line[2]+"\t"+line[3]+"\t"+PDB+chain+str(location)+"\n")
     line=scope_file.readline()
 
 scope_file.close()
+soluble_domains_file.close()
 
 
 
