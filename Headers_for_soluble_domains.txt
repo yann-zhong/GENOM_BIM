@@ -1,0 +1,1 @@
+ID	SCOPe	domain	PDB	chain	location	Pfam_accession
