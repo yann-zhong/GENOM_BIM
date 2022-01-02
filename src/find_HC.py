@@ -70,7 +70,7 @@ def binary_coding(seq):
     return structs, Q_codes
 
 def read_data(file):
-    f = open(file, 'r')
+    f = open(file, 'r', encoding='ISO-8859-1')
     data = []
     data_i = []
     for line in f.readlines():
