@@ -1,3 +1,5 @@
+import numpy as np
+
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
