@@ -76,17 +76,27 @@ def binary_coding(seq):
     # make a dictionnary with the positions and the HC
     return make_dict(positions, HCs)
 
-def read_data(file):
-    f = open(file, 'r', encoding = 'ISO-8859-1')
+def get_PF(file):
+    f = open(file, 'r')
+    list_PF = set()
+    for line in f.readlines():
+        list_PF.add(line.split('\t')[-1].strip())
+    f.close()
+    return list_PF
+
+def read_data(file_alignments, file_PF):
+    list_PF = get_PF(file_PF)
+    f = open(file_alignments, 'r', encoding = 'ISO-8859-1')
     data = {}
     data_i = []
     count=1
     for line in f.readlines():
         if line[0]=='/':
-            data[superfamily]=data_i
-            data_i=[]
+            if superfamily in list_PF:
+                data[superfamily]=data_i
+                data_i=[]
             count=1
-        elif line[0]!='#':
+        elif line[0]!='#' and superfamily in list_PF:
             data_i.append(line.split()[1])
         elif count==3:
             superfamily = line.split()[2].split('.')[0]
@@ -95,14 +105,6 @@ def read_data(file):
             count+=1
     f.close()
     return data
-
-def get_PF(file):
-    f = open(file)
-    list_PF = set()
-    for line in f.readlines():
-        list_PF.add(line.split('\t')[-1].strip())
-    f.close()
-    return list_PF
 
 def count_HC(HCs, dico):
     for hc in HCs.values():
@@ -139,17 +141,20 @@ def filtred_HCs(HCs, n):
     return HCs_filtred
 
 def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False):
-    data = read_data(file_alignements)
-    list_PF = get_PF(file_soluble_domains)
-    list_PF = data.keys()
+    print('Preprocessing...')
+    data = read_data(file_alignements, file_soluble_domains)
+    print('done')
+    print('Searching HCs...')
     all_HC = {}
-    for superfamily,alignment in data.items():
-        if superfamily in list_PF:
-            for seq in alignment:
-                HCs = binary_coding(seq)
-                all_HC = count_HC(HCs, all_HC)
+    for _,alignment in data.items():
+        for seq in alignment:
+            HCs = binary_coding(seq)
+            all_HC = count_HC(HCs, all_HC)
+    print('done')
+    print('Filtring...')
     all_HC = filtred_HCs(all_HC, nb_HC)
     all_HC = dict(sorted(all_HC.items(), key=lambda x:x[1], reverse=True))
+    print('done')
     if Q_code:
         HC_with_Q_code = {}
         for hc in all_HC:
