@@ -1,6 +1,8 @@
+import numpy as np
+
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
-    list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W']
+    list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
     output = ''
     for i in range(len(seq)):
         if seq[i] in list_aa:
@@ -16,7 +18,7 @@ def find_intervals(seq_bin, seq_aa):
             for j in range(4):
                 boundaries.add(i+j)
     for i in range(len(seq_aa)):
-        if seq_aa[i]=='P':
+        if seq_aa[i] in ['P', 'p']:
             boundaries.add(i)
             j=1
             while i+j<len(seq_bin):
@@ -27,82 +29,136 @@ def find_intervals(seq_bin, seq_aa):
     return boundaries # complexity = (n-3)+4*#boundaries
 
 def get_HC(seq, boundaries):
-    structs = []
-    struct = ''
+    positions = []
+    HCs = []
+    hc = ''
     for i in range(len(seq)):
         if i not in boundaries:
-            struct += seq[i]
-        elif len(struct)>1:
-            structs.append(struct)
-            struct = ''
-    return structs
+            if hc=='':
+                pos1=i
+            hc += seq[i]
+        elif len(hc)>1:
+            HCs.append(hc)
+            positions += [pos1, i-1]
+            hc = ''
+        else:
+            hc = ''
+    if len(hc)>1:
+        HCs.append(hc)
+        positions += [pos1, len(seq)-1]
+    return positions, HCs
 
-def get_Q_codes(structs):
-    Q_codes = []
-    for struct in structs:
-        Q_code =''
-        for i in range(len(struct)-1):
-            if struct[i:i+2]=='11':
-                Q_code+='V'
-            elif struct[i:i+3]=='101':
-                Q_code+='M'
-            elif struct[i:i+4]=='1001':
-                Q_code+='U'
-            elif struct[i:i+5]=='10001':
-                Q_code+='D'
-        if Q_code!='':
-            Q_codes.append(Q_code)
-    return Q_codes
+def put_back_ponctuation(positions, list_ponctuations):
+    for ponct in list_ponctuations:
+        for i in range(len(positions)):
+            if positions[i]>=ponct:
+                positions[i]+=1
+    return positions
+
+def make_dict(positions, HCs):
+    final_dict = {}
+    for i in range(int(len(positions)/2)):
+        final_dict[(positions[i*2], positions[i*2+1])] = HCs[i]
+    return final_dict
 
 def binary_coding(seq):
-    # remove "." and "-"
-    seq = seq.replace('.', '')
-    seq = seq.replace('-', '')
+    # remove "." and "-" but conserve their position
+    list_ponctuations = [ind for ind,nucl in enumerate(seq) if nucl in ['.', '-']]
+    seq = seq.replace('.', '').replace('-', '')
     # transform into binary sequence
     seq_bin = binarization(seq)
     # find boundaries where there are not particular structure (helix or sheet)
     boundaries = find_intervals(seq_bin, seq)
-    # get potential structures
-    structs = get_HC(seq_bin, boundaries)
-    # get Q-codes
-    Q_codes = get_Q_codes(structs)
-    
-    return structs, Q_codes
+    # get potential hydrophobic clusters
+    positions, HCs = get_HC(seq_bin, boundaries)
+    # put back "." and "-"
+    positions = put_back_ponctuation(positions, list_ponctuations)
+    # make a dictionnary with the positions and the HC
+    return make_dict(positions, HCs)
 
-def read_data(file):
-    f = open(file, 'r', encoding='ISO-8859-1')
-    data = []
+def get_PF(file):
+    f = open(file, 'r')
+    list_PF = set()
+    for line in f.readlines():
+        list_PF.add(line.split('\t')[-1].strip())
+    f.close()
+    return list_PF
+
+def read_data(file_alignments, file_PF):
+    list_PF = get_PF(file_PF)
+    f = open(file_alignments, 'r', encoding = 'ISO-8859-1')
+    data = {}
     data_i = []
+    count=1
     for line in f.readlines():
         if line[0]=='/':
-            data.append(data_i)
-            data_i=[]
-        elif line[0]!='#':
+            if superfamily in list_PF:
+                data[superfamily]=data_i
+                data_i=[]
+            count=1
+        elif line[0]!='#' and superfamily in list_PF:
             data_i.append(line.split()[1])
+        elif count==3:
+            superfamily = line.split()[2].split('.')[0]
+            count+=1
+        elif count<5:
+            count+=1
     f.close()
     return data
 
-def count_HC(structs, dico):
-    for struct in structs:
-        for i in range(len(struct)-1):
-            if struct[i]=='1':
-                for j in range(i+1, len(struct)):
-                    if struct[j]=='1':
-                        if int(struct[i:j+1], 2) in dico:
-                            dico[int(struct[i:j+1], 2)]+=1
+def count_HC(HCs, dico):
+    for hc in HCs.values():
+        for i in range(len(hc)-1):
+            if hc[i]=='1':
+                for j in range(i+1, len(hc)):
+                    if hc[j]=='1':
+                        if int(hc[i:j+1], 2) in dico:
+                            dico[int(hc[i:j+1], 2)]+=1
                         else:
-                            dico[int(struct[i:j+1], 2)] = 1
+                            dico[int(hc[i:j+1], 2)] = 1
     return dico
 
-def get_analyse(file):
-    data = read_data(file)
+def get_Q_codes(hc):
+    hc=bin(hc)
+    Q_code =''
+    for i in range(len(hc)-1):
+        if hc[i:i+2]=='11':
+            Q_code+='V'
+        elif hc[i:i+3]=='101':
+            Q_code+='M'
+        elif hc[i:i+4]=='1001':
+            Q_code+='U'
+        elif hc[i:i+5]=='10001':
+            Q_code+='D'
+    return Q_code
+
+def filtred_HCs(HCs, n):
+    size = len(HCs)
+    lim = int(np.quantile(list(HCs.values()), 1-n/size))
+    HCs_filtred = {}
+    for hc,count in HCs.items():
+        if count>=lim:
+            HCs_filtred[hc]=count
+    return HCs_filtred
+
+def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False):
+    print('Preprocessing...')
+    data = read_data(file_alignements, file_soluble_domains)
+    print('done')
+    print('Searching HCs...')
     all_HC = {}
-    all_Q_codes = []
-    for i in range(len(data)):
-        Q_codes = []
-        for j in range(len(data[i])):
-            structs, Q_code = binary_coding(data[i][j])
-            all_HC = count_HC(structs, all_HC)
-            Q_codes.append(Q_code)
-        all_Q_codes.append(Q_codes)
-    return all_Q_codes, all_HC
+    for _,alignment in data.items():
+        for seq in alignment:
+            HCs = binary_coding(seq)
+            all_HC = count_HC(HCs, all_HC)
+    print('done')
+    print('Filtring...')
+    all_HC = filtred_HCs(all_HC, nb_HC)
+    all_HC = dict(sorted(all_HC.items(), key=lambda x:x[1], reverse=True))
+    print('done')
+    if Q_code:
+        HC_with_Q_code = {}
+        for hc,effectif in all_HC.items():
+            HC_with_Q_code[(hc, get_Q_codes(hc))] = effectif
+        return HC_with_Q_code
+    return all_HC
