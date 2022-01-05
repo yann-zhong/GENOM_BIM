@@ -77,7 +77,7 @@ def binary_coding(seq):
     return make_dict(positions, HCs)
 
 def read_data(file):
-    f = open(file, 'r')
+    f = open(file, 'r', encoding = 'ISO-8859-1')
     data = {}
     data_i = []
     count=1
