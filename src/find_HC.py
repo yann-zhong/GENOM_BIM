@@ -119,6 +119,7 @@ def count_HC(HCs, dico):
     return dico
 
 def get_Q_codes(hc):
+    hc=bin(hc)
     Q_code =''
     for i in range(len(hc)-1):
         if hc[i:i+2]=='11':
@@ -157,7 +158,7 @@ def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False)
     print('done')
     if Q_code:
         HC_with_Q_code = {}
-        for hc in all_HC:
-            HC_with_Q_code[hc] = get_Q_codes(hc)
+        for hc,effectif in all_HC.items():
+            HC_with_Q_code[(hc, get_Q_codes(hc))] = effectif
         return HC_with_Q_code
     return all_HC
