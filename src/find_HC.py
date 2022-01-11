@@ -1,5 +1,9 @@
 import numpy as np
 
+
+# Transform into binary sequence where the "1" represent the contiguous strong hydrophobic amino acids
+# input: sequence of AA
+# output: sequence in binary
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
@@ -11,6 +15,10 @@ def binarization(seq):
             output += '0'
     return output
 
+
+# Find domains where there are not particular structure (helix or sheet)
+# input: sequence in binary and sequence of AA
+# output: set of positions not in particular structure
 def find_intervals(seq_bin, seq_aa):
     boundaries = set()
     for i in range(len(seq_bin)-3):
@@ -26,8 +34,11 @@ def find_intervals(seq_bin, seq_aa):
                     break
                 boundaries.add(i+j)
                 j+=1
-    return boundaries # complexity = (n-3)+4*#boundaries
+    return boundaries
 
+# Get potential hydrophobic clusters
+# input: sequence in binary and set of positions without particular structure
+# output: list of HC limits and list of HC patterns
 def get_HC(seq, boundaries):
     positions = []
     HCs = []
@@ -48,6 +59,9 @@ def get_HC(seq, boundaries):
         positions += [pos1, len(seq)-1]
     return positions, HCs
 
+# Put back "." and "-" in the sequence
+# input: list of HC limits, list of ponctuation positions
+# output: list of adjusted HC limits
 def put_back_ponctuation(positions, list_ponctuations):
     for ponct in list_ponctuations:
         for i in range(len(positions)):
@@ -55,27 +69,31 @@ def put_back_ponctuation(positions, list_ponctuations):
                 positions[i]+=1
     return positions
 
+# Make a dictionnary with the positions and the HC
+# input: list of HC limits and list of HC patterns
+# output: dictionary of positions tuples (start, end) associated to their HC patterns
 def make_dict(positions, HCs):
     final_dict = {}
     for i in range(int(len(positions)/2)):
         final_dict[(positions[i*2], positions[i*2+1])] = HCs[i]
     return final_dict
 
+# Find the different HC patterns in a sequence and give them associating to their positions
+# input: sequence of AA
+# output: dictionary of positions tuples (start, end) associated to their HC patterns
 def binary_coding(seq):
-    # remove "." and "-" but conserve their position
+    # remove "." and "-" from the sequence but save their position
     list_ponctuations = [ind for ind,nucl in enumerate(seq) if nucl in ['.', '-']]
     seq = seq.replace('.', '').replace('-', '')
-    # transform into binary sequence
     seq_bin = binarization(seq)
-    # find boundaries where there are not particular structure (helix or sheet)
     boundaries = find_intervals(seq_bin, seq)
-    # get potential hydrophobic clusters
     positions, HCs = get_HC(seq_bin, boundaries)
-    # put back "." and "-"
     positions = put_back_ponctuation(positions, list_ponctuations)
-    # make a dictionnary with the positions and the HC
     return make_dict(positions, HCs)
 
+# Get the names of soluble domains
+# input: file containing the soluble domains
+# output: list of soluble domain names
 def get_PF(file):
     f = open(file, 'r')
     list_PF = set()
@@ -84,6 +102,9 @@ def get_PF(file):
     f.close()
     return list_PF
 
+# Read the alignments of soluble domains in a database
+# input: file containing alignments and file containing soluble domains
+# output: dictionary ossociating superfamily to their alignment
 def read_data(file_alignments, file_PF):
     list_PF = get_PF(file_PF)
     f = open(file_alignments, 'r', encoding = 'ISO-8859-1')
@@ -106,6 +127,9 @@ def read_data(file_alignments, file_PF):
     f.close()
     return data
 
+# Count how many each HC patterns is present in the soluble domains and update the count
+# input: dictionary of positions tuples (start, end) associated to their HC patterns and dictionary associating each HC pattern to his number of appartitions
+# output: dictionary associating each HC pattern to his number of appartitions
 def count_HC(HCs, dico):
     for hc in HCs.values():
         for i in range(len(hc)-1):
@@ -118,6 +142,9 @@ def count_HC(HCs, dico):
                             dico[int(hc[i:j+1], 2)] = 1
     return dico
 
+# Get the Q-code of a HC pattern
+# input: integer of a HC
+# output: string of the Q-code
 def get_Q_codes(hc):
     hc=bin(hc)
     Q_code =''
@@ -132,6 +159,9 @@ def get_Q_codes(hc):
             Q_code+='D'
     return Q_code
 
+# Keep only the most present HC patterns
+# input: dictionary associating HC patterns to his number of appartitions and the number of HC patterns kept
+# output: adjusted dictionary associating HC patterns to his number of appartitions
 def filtred_HCs(HCs, n):
     size = len(HCs)
     lim = int(np.quantile(list(HCs.values()), 1-n/size))
@@ -141,6 +171,9 @@ def filtred_HCs(HCs, n):
             HCs_filtred[hc]=count
     return HCs_filtred
 
+# Find most present HC patterns into soluble domain alignments and give potentially their Q-code
+# input: file containing alignments, file containing soluble domains, number of HC patters kept and boolean which indicates if we need the Q-code
+# output: dictionary associating HC patterns to his number of appartitions
 def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False):
     print('Preprocessing...')
     data = read_data(file_alignements, file_soluble_domains)
