@@ -2,7 +2,6 @@ import os
 import numpy as np
 from itertools import *
 import re
-from time import time
 
 #############  Creation of the "Domain" class to easily store Domains and their informations
 class Domain:
@@ -17,22 +16,22 @@ class Domain:
 
 ############ Step 1: Soluble domains extraction
 
-#SDE is a function that takes as input the path to a SCOPe file (str) and in output writes a new file that only contains soluble domains.
+#SDE is a function that takes as input the path to a SCOPe file (path_to_scope_file=str), and the path to a folder where you want your results saved (out_folder=str, if not specified, writes in the current directory).
 
-#The output file is called "soluble_domains.txt" and is created in the current directory.
+#The output file is called "soluble_domains.txt" and only contains soluble domains.
 #The output file is formated as such: ID	SCOPe	domain	PDB	chain	location
-#The is also 2 variable outputs to this fuction:    SDE(path...) [0]: soluble_domains = every soluble domains under the class Domain created earlier in a list
+#There is also 2 variable outputs to this fuction:  SDE(path...) [0]: soluble_domains = every soluble domains under the class Domain created earlier in a list
 #                                                   SDE(path...) [1]: PDBs =  the list of every PDB code for each domain in the soluble_domains list
 
 #While running this pipeline, you should store those variables respectively under the names "soluble_domains" and "PDBs"
 #For exemple: soluble_domains,PDBs=SDE("dir.des.scope.2.08-stable.txt")
 
-def SDE(path_to_scope_file):
+def SDE(path_to_scope_file,out_folder="."):
     soluble_domains=[]  #List of domains
     PDBs=[]   #List of PDB codes of soluble domains
 
     scope_file=open(path_to_scope_file,'r')
-    soluble_domains_file=open("soluble_domains.txt",'w')
+    soluble_domains_file=open(out_folder+"\\soluble_domains.txt",'w')
 
     for i in range(5):
         line=scope_file.readline()
@@ -61,18 +60,18 @@ def SDE(path_to_scope_file):
 
     scope_file.close()
     soluble_domains_file.close()
-    print("Soluble domains extracted in \"soluble_domains.txt\"")
+    print("Soluble domains extracted in \""+out_folder+"/soluble_domains.txt\"")
     return soluble_domains,PDBs
 
 
 ############ Step 2: Pfam accession codes extraction
 
-#PACE is a fuction that takes as input the path to a PDB/PFAM mapping file (str), a list of domains of interest (list of Domains), and the list of the domains' PDBs that should be sorted in the same order (list of str)
+#PACE is a fuction that takes as input the path to a PDB/PFAM mapping file (path_to_pdb_pfam_mapping_file=str), a list of domains of interest (soluble_domains=list of Domains), the list of the domains' PDBs that should be sorted in the same order (PDBs=list of str),and the path to a folder where you want your results saved (out_folder=str, if not specified, writes in the current directory).
 
-#The output file is called "soluble_domains_pfam_accession.txt" and is created in the current directory, it contains the same thing as the output SDE file but also includes the Pfam accession code for each domains.
+#The output file is called "soluble_domains_pfam_accession.txt", and it contains the same thing as the output SDE file but also includes the Pfam accession code for each domains.
 #The output file is formated as such: ID	SCOPe	domain	PDB	chain	location Pfam_accession
 
-def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
+def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs,out_folder="."):
     pfam_mapping=open(path_to_pdb_pfam_mapping_file,'r')
     Pfam_accessions=[]
 
@@ -86,7 +85,7 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
 
     while line!="":
 
-        soluble_domains_with_pfam_file=open("soluble_domains_pfam_accession.txt","a")
+        soluble_domains_with_pfam_file=open(out_folder+"\\soluble_domains_pfam_accession.txt","a")
         line=line.split()
         if line[0] in PDBs:
             indices_PDBs=[ind for ind in range(len(PDBs)) if PDBs[ind]==line[0]]
@@ -107,70 +106,7 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
 
     soluble_domains_with_pfam_file.close()
     pfam_mapping.close()
-    return "Soluble domains + Pfam accession codes extracted in \"soluble_domains_pfam_accession.txt\""
-
-
-############ ADD THE REST OF THE PIPELINE???
-
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
-############ Last step: Matrix construction
-
-#MC is a function taht takes as input the path to a file that contains the names of all the selected HCs (str), and the path to the countinf matrix of theses chosen HCs (str)
-
-#The output file is called "Matrix_swap.txt" and is created in the current directory, it contains the subtitution matrix of the given HCs.
-
-def MC(path_all_HCs_names,path_count_matrix,lamda=0.347):
-
-    names=np.loadtxt(path_all_HCs_names)#LOADING NAMES OF THE HCs (it's actually just the q_code for each HCs)
-    n=len(names)  #NUMBER OF HCs
-
-    matrice = np.loadtxt(path_count_matrix) #MATRICE LOADED
-
-    dic_q={}  #INITIALIZING THE DICTIONARY WITH EVERY "qi" = MODEL NUL
-
-    matrice_pij=matrice/np.sum(matrice)
-    n = len(matrice)
-    for i in range(n):
-        if np.sum(matrice_pij[i])==0:
-            matrice_pij[i][0]=1
-        dic_q[int(names[i])]=(np.sum(matrice_pij[i])/2)+(matrice_pij[i,i])/2
-    matrice_triangulaire = np.zeros(matrice.shape) #TRIANGLE
-
-    for i in range(n):
-        for j in range(n-(i+1)):
-            matrice_triangulaire[i,j+(i+1)]=round(np.log(matrice_pij[i,j+(i+1)]/(2*dic_q[names[i]]*dic_q[names[j+(i+1)]]))/lamda)
-
-    for i in range(n):
-        matrice_triangulaire[i,i]=round(np.log(matrice_pij[i,i]/(dic_q[names[i]]**2))/lamda)
-
-    matrice_file=open("Matrix_swap.txt","w")
-    for i in matrice_triangulaire:
-        for j in i:
-            matrice_file.write(str(j)+" ")
-        matrice_file.write("\n")
-    return "Matrix created in \"Matrix_swap.txt\""
-
-
+    return "Soluble domains + Pfam accession codes extracted in \""+out_folder+"/soluble_domains_pfam_accession.txt\""
 
 
 
