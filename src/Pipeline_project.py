@@ -89,13 +89,8 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
         soluble_domains_with_pfam_file=open("soluble_domains_pfam_accession.txt","a")
         line=line.split()
         if line[0] in PDBs:
-            #print(line)
             indices_PDBs=[ind for ind in range(len(PDBs)) if PDBs[ind]==line[0]]
-            #print(indices_PDBs)
-            #print("###################\n")
             for i in indices_PDBs:
-                #print("sol:",soluble_domains[i].chain,"pfam:",line[1])
-
                 if soluble_domains[i].chain==line[1]:
                     if soluble_domains[i].location=='full':
                         soluble_domains_with_pfam_file.write(soluble_domains[i].ID+"\t"+soluble_domains[i].SCOPe+"\t"+soluble_domains[i].domain+"\t"+soluble_domains[i].PDB+"\t"+soluble_domains[i].chain+"\t"+line[2]+"-"+line[3]+"\t"+line[4]+"\n")
@@ -104,17 +99,10 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
                     else:
                         start=re.search(r"[\d]+-",soluble_domains[i].location).group()[:-1]
                         end=re.search(r"-[\d]+",soluble_domains[i].location).group()[1:]
-                        #print(start,end)
                         if int(start)<=int(line[2])<int(line[3])<=int(end):
                             soluble_domains_with_pfam_file.write(soluble_domains[i].ID+"\t"+soluble_domains[i].SCOPe+"\t"+soluble_domains[i].domain+"\t"+soluble_domains[i].PDB+"\t"+soluble_domains[i].chain+"\t"+line[2]+"-"+line[3]+"\t"+line[4]+"\n")
                             PDBs[i]=-1
-                    #print("MATCH")
-            #print([ind for ind in range(len(PDBs)) if PDBs[ind]==line[0]])
         soluble_domains_with_pfam_file.close()
-                #print(soluble_domains[i].PDB)
-            #print("###################\n*\n*\n*\n*\n*\n*")
-
-            #print(line[0],line[4])
         line=pfam_mapping.readline()
 
     soluble_domains_with_pfam_file.close()
@@ -151,7 +139,7 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs):
 
 #The output file is called "Matrix_swap.txt" and is created in the current directory, it contains the subtitution matrix of the given HCs.
 
-def MC(path_all_HCs_names,path_count_matrix):
+def MC(path_all_HCs_names,path_count_matrix,lamda=0.347):
 
     names=np.loadtxt(path_all_HCs_names)#LOADING NAMES OF THE HCs (it's actually just the q_code for each HCs)
     n=len(names)  #NUMBER OF HCs
@@ -160,22 +148,13 @@ def MC(path_all_HCs_names,path_count_matrix):
 
     dic_q={}  #INITIALIZING THE DICTIONARY WITH EVERY "qi" = MODEL NUL
 
-
-
     matrice_pij=matrice/np.sum(matrice)
-
     n = len(matrice)
     for i in range(n):
         if np.sum(matrice_pij[i])==0:
             matrice_pij[i][0]=1
         dic_q[int(names[i])]=(np.sum(matrice_pij[i])/2)+(matrice_pij[i,i])/2
-
-
     matrice_triangulaire = np.zeros(matrice.shape) #TRIANGLE
-
-    lamda=0.347
-
-
 
     for i in range(n):
         for j in range(n-(i+1)):
