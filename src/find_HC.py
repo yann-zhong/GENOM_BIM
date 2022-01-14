@@ -1,8 +1,8 @@
 import numpy as np
 
-# Transform into binary sequence where the "1" represent the contiguous strong hydrophobic amino acids
-# input: sequence of AA
-# output: sequence in binary
+# Transform sequence in binary except the P where the "1" represent the contiguous strong hydrophobic amino acids
+# input: string sequence of AA
+# output: string sequence in binary (+"P")
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
@@ -10,63 +10,67 @@ def binarization(seq):
     for i in range(len(seq)):
         if seq[i] in list_aa:
             output += '1'
+        elif seq[i] in ['P', 'p']:
+            output += 'P'
         else:
             output += '0'
     return output
 
+# Find all the positions of an element in a sequence
+# input: string sequence in binary (+"P"), string element to find
+# output: generator of integers
+def find_x(seq, x):
+    for ind,nt in enumerate(seq):
+        if nt == x:
+            yield ind
 
-# Find domains where there are no particular structures (helix or sheet)
-# input: sequence in binary and sequence of AA
-# output: set of positions not in particular structure
-def find_intervals(seq_bin, seq_aa):
-    boundaries = set()
-    for i in range(len(seq_bin)-3):
-        if seq_bin[i:i+4]=='0000':
-            for j in range(4):
-                boundaries.add(i+j)
-    for i in range(len(seq_aa)):
-        if seq_aa[i] in ['P', 'p']:
-            boundaries.add(i)
-            j=1
-            while i+j<len(seq_bin):
-                if seq_bin[i+j]=='1':
-                    break
-                boundaries.add(i+j)
-                j+=1
-    return boundaries
-
-# Get potential hydrophobic clusters
-# input: sequence in binary and set of positions without particular structure
-# output: list of HC limits and list of HC patterns
-def get_HC(seq, boundaries):
-    positions = []
-    HCs = []
-    hc = ''
-    for i in range(len(seq)):
-        if i not in boundaries:
-            if hc=='':
-                pos1=i
-            hc += seq[i]
-        elif len(hc)>1:
-            HCs.append(hc)
-            positions += [pos1, i-1]
-            hc = ''
-        else:
-            hc = ''
+# Delimitate all the HCs and find all the "1"-positions in them
+# input: string sequence in binary (+"P")
+# output: generator of list
+def find_HCs(seq):
+    pos_1 = list(find_x(seq, '1'))
+    pos_P = list(find_x(seq, 'P'))
+    imp_pos = sorted(pos_1+pos_P)
+    hc = []
+    for pos in imp_pos:
+        if pos not in pos_P and hc == []:
+            hc.append(pos)
+            continue
+        elif pos not in pos_P and pos-hc[-1]<4:
+            hc.append(pos)
+            continue
+        if len(hc)>1:
+            yield hc
+        hc = []
     if len(hc)>1:
-        HCs.append(hc)
-        positions += [pos1, len(seq)-1]
-    return positions, HCs
+        yield hc
+
+# Construct all hc with in binary
+# input: list of "1"-position lists
+# output: generator of HC sequence in binary
+def make_hc(positions):
+    for hc in positions:
+        yield ''.join(['1' if i in hc else '0' for i in range(hc[0], hc[-1]+1)])
+
+# Keep only the extremities of HCs
+# input: list of position lists
+# output: generator of start and end positions
+def keep_limits(positions):
+    for pos in positions:
+        yield pos[0]
+        yield pos[-1]
 
 # Put back "." and "-" in the sequence
 # input: list of HC limits, list of ponctuation positions
 # output: list of adjusted HC limits
 def put_back_ponctuation(positions, list_ponctuations):
-    for ponct in list_ponctuations:
-        for i in range(len(positions)):
-            if positions[i]>=ponct:
-                positions[i]+=1
-    return positions
+    for pos in positions:
+        for ponct in list_ponctuations:
+            if pos >= ponct:
+                pos+=1
+            else:
+                break
+        yield pos
 
 # Create a dictionary with positions of the HC and the HC
 # input: list of HC limits and list of HC patterns
@@ -84,10 +88,11 @@ def binary_coding(seq):
     # remove "." and "-" from the sequence but save their position
     list_ponctuations = [ind for ind,nucl in enumerate(seq) if nucl in ['.', '-']]
     seq = seq.replace('.', '').replace('-', '')
-    seq_bin = binarization(seq)
-    boundaries = find_intervals(seq_bin, seq)
-    positions, HCs = get_HC(seq_bin, boundaries)
-    positions = put_back_ponctuation(positions, list_ponctuations)
+    seq = binarization(seq)
+    all_positions = list(find_HCs(seq))
+    HCs = list(make_hc(all_positions))
+    positions = list(keep_limits(all_positions))
+    positions = list(put_back_ponctuation(positions, list_ponctuations))
     return make_dict(positions, HCs)
 
 # Get the Pfam accession numbers
@@ -131,15 +136,10 @@ def read_data(file_alignments, file_PF):
 # output: dictionary associating each HC pattern to its number of apparitions
 def count_HC(HCs, dico):
     for hc in HCs.values():
-        for i in range(len(hc)-1):
-            if hc[i]=='1':
-                for j in range(i+1, len(hc)):
-                    if hc[j]=='1':
-                        if int(hc[i:j+1], 2) in dico:
-                            dico[int(hc[i:j+1], 2)]+=1
-                        else:
-                            dico[int(hc[i:j+1], 2)] = 1
+        dico.setdefault(int(hc, 2), 0)
+        dico[int(hc, 2)]+=1
     return dico
+
 
 # Get the Q-code of a HC pattern
 # input: integer of a HC
