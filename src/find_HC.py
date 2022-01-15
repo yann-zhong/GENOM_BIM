@@ -6,15 +6,13 @@ import numpy as np
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
-    output = ''
     for i in range(len(seq)):
         if seq[i] in list_aa:
-            output += '1'
+            yield '1'
         elif seq[i] in ['P', 'p']:
-            output += 'P'
+            yield 'P'
         else:
-            output += '0'
-    return output
+            yield '0'
 
 # Find all the positions of an element in a sequence
 # input: string sequence in binary (+"P"), string element to find
@@ -88,7 +86,7 @@ def binary_coding(seq):
     # remove "." and "-" from the sequence but save their position
     list_ponctuations = [ind for ind,nucl in enumerate(seq) if nucl in ['.', '-']]
     seq = seq.replace('.', '').replace('-', '')
-    seq = binarization(seq)
+    seq = ''.join(list(binarization(seq)))
     all_positions = list(find_HCs(seq))
     HCs = list(make_hc(all_positions))
     positions = list(keep_limits(all_positions))
