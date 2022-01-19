@@ -9,9 +9,9 @@ import re
 
 #The output file is called "Matrix_swap.txt" and is created in the current directory, it contains the subtitution matrix of the given HCs.
 
-def MC(path_all_HCs_names,path_count_matrix,lamda=0.347,out_folder="."):
-
-    names=np.loadtxt(path_all_HCs_names)#LOADING NAMES OF THE HCs (it's actually just the q_code for each HCs)
+def MC(names,path_count_matrix,lamda=0.347,out_folder="."):
+    
+    #names=np.loadtxt(path_all_HCs_names)#LOADING NAMES OF THE HCs (it's actually just the q_code for each HCs)
     n=len(names)  #NUMBER OF HCs
 
     matrice = np.loadtxt(path_count_matrix) #MATRICE LOADED
