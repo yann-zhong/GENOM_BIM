@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import json
 
 # Transform sequence in binary except the P where the "1" represent the contiguous strong hydrophobic amino acids
 # input: string sequence of AA
@@ -171,7 +173,7 @@ def filtred_HCs(HCs, n):
 # Find most present HC patterns into soluble domain alignments and give potentially their Q-code
 # input: file containing alignments, file containing soluble domains, number of HC patters kept and boolean which indicates if we need the Q-code
 # output: dictionary associating HC patterns to his number of apparitions
-def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False):
+def get_analyse(file_alignements, file_soluble_domains, output_file, nb_HC=500, Q_code=False):
     print('Preprocessing...')
     data = read_data(file_alignements, file_soluble_domains)
     print('done')
@@ -182,13 +184,19 @@ def get_analyse(file_alignements, file_soluble_domains, nb_HC=500, Q_code=False)
             HCs = binary_coding(seq)
             all_HC = count_HC(HCs, all_HC)
     print('done')
+    
     print('Filtring...')
     all_HC = filtred_HCs(all_HC, nb_HC)
     all_HC = dict(sorted(all_HC.items(), key=lambda x:x[1], reverse=True))
     print('done')
+    
     if Q_code:
         HC_with_Q_code = {}
         for hc,effectif in all_HC.items():
             HC_with_Q_code[(hc, get_Q_codes(hc))] = effectif
         return HC_with_Q_code
-    return all_HC
+    
+    # save results
+    output = open(output_file, 'w')
+    json.dump(all_HC, output)
+    output.close()
