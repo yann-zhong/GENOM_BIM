@@ -4,7 +4,7 @@ import json
 
 # Transform sequence in binary except the P where the "1" represent the contiguous strong hydrophobic amino acids
 # input: string sequence of AA
-# output: string sequence in binary (+"P")
+# output: string sequence in binary (except the "P")
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
@@ -17,15 +17,15 @@ def binarization(seq):
             yield '0'
 
 # Find all the positions of an element in a sequence
-# input: string sequence in binary (+"P"), string element to find
-# output: generator of integers
+# input: string sequence in binary (except the "P"), string element to find
+# output: generator of integer
 def find_x(seq, x):
     for ind,nt in enumerate(seq):
         if nt == x:
             yield ind
 
 # Delimitate all the HCs and find all the "1"-positions in them
-# input: string sequence in binary (+"P")
+# input: string sequence in binary (except the "P")
 # output: generator of list
 def find_HCs(seq):
     pos_1 = list(find_x(seq, '1'))
@@ -72,18 +72,18 @@ def put_back_ponctuation(positions, list_ponctuations):
                 break
         yield pos
 
-# Create a dictionary with positions of the HC and the HC
-# input: list of HC limits and list of HC patterns
-# output: dictionary of positions tuples (start, end) associated to their HC patterns
+# Create a dictionary associating HC positions with the HC
+# input: list of HC limits and list of HCs
+# output: dictionary of positions tuples (start, end) associated to their HCs
 def make_dict(positions, HCs):
     final_dict = {}
     for i in range(int(len(positions)/2)):
         final_dict[(positions[i*2], positions[i*2+1])] = HCs[i]
     return final_dict
 
-# Find the different HC patterns in a sequence and give their associated positions
+# Find the different HCs in a sequence and give their associated positions
 # input: sequence of AA
-# output: dictionary of positions tuples (start, end) associated to their HC patterns
+# output: dictionary of positions tuples (start, end) associated to their HCs
 def binary_coding(seq):
     # remove "." and "-" from the sequence but save their position
     list_ponctuations = [ind for ind,nucl in enumerate(seq) if nucl in ['.', '-']]
@@ -132,8 +132,8 @@ def read_data(file_alignments, file_PF):
     return data
 
 # Count how many each HC patterns are present in the soluble domains and update the count
-# input: dictionary of positions tuples (start, end) associated to their HC patterns and dictionary associating each HC pattern to its number of apparitions
-# output: dictionary associating each HC pattern to its number of apparitions
+# input: dictionary of positions tuples (start, end) associated to their HCs and dictionary associating each HC to its number of occurences
+# output: dictionary associating each HC to its number of occurences
 def count_HC(HCs, dico):
     for hc in HCs.values():
         dico.setdefault(int(hc, 2), 0)
@@ -141,7 +141,7 @@ def count_HC(HCs, dico):
     return dico
 
 
-# Get the Q-code of a HC pattern
+# Get the Q-code of a HC
 # input: integer of a HC
 # output: Q-code string
 def get_Q_codes(hc):
@@ -158,9 +158,9 @@ def get_Q_codes(hc):
             Q_code+='D'
     return Q_code
 
-# Keep only the most present HC patterns
-# input: dictionary associating HC patterns to its number of appartitions and the number of HC patterns kept
-# output: adjusted dictionary associating HC patterns to its number of apparitions
+# Keep only the most present HCs
+# input: dictionary associating HCs to its number of appartitions and the number of HCs kept
+# output: adjusted dictionary associating HCs to its number of occurences
 def filtred_HCs(HCs, n):
     size = len(HCs)
     lim = int(np.quantile(list(HCs.values()), 1-n/size))
@@ -171,8 +171,8 @@ def filtred_HCs(HCs, n):
     return HCs_filtred
 
 # Find most present HC patterns into soluble domain alignments and give potentially their Q-code
-# input: file containing alignments, file containing soluble domains, number of HC patters kept and boolean which indicates if we need the Q-code
-# output: dictionary associating HC patterns to his number of apparitions
+# input: file containing alignments, file containing soluble domains, file for output, number of HCs kept and boolean which indicates if we need the Q-code
+# output: file containing dictionary associating HCs with their number of occurences
 def get_analyse(file_alignements, file_soluble_domains, output_file, nb_HC=500, Q_code=False):
     print('Preprocessing...')
     data = read_data(file_alignements, file_soluble_domains)

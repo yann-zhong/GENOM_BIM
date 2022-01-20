@@ -1,6 +1,9 @@
 import numpy as np
 from math import *
 
+# Put symbols instead of some amino acids
+# input: string sequence
+# output: string sequence
 def put_symbols(seq):
     dict_symbols = {
         'P':'★',
@@ -12,6 +15,9 @@ def put_symbols(seq):
         seq = seq.replace(aa, dict_symbols[aa])
     return seq
 
+# display the sequence with a particular form
+# input: string sequence
+# output: numpy matrix
 def display_matrix(seq):
     n = len(seq)
     double_helix = np.empty((8, ceil(n/4)+1), dtype = "object")
@@ -23,6 +29,9 @@ def display_matrix(seq):
     double_helix[double_helix==None] = '-'
     print(double_helix)
 
+# show the horizontal clusters
+# input: string sequence
+# output: numpy matrix
 def horizontal_cluster(seq):
     # remove "." and "-"
     seq = (seq.replace('.', '')).replace('-', '')
