@@ -3,6 +3,7 @@ import numpy as np
 from itertools import *
 import re
 import json
+from src.count_matrix_construction import symmetrize
 
 ############ Last step: Matrix construction
 
@@ -19,30 +20,32 @@ def MC(HC_counts, path_count_matrix, output_file, lamda=0.347):
     for i in range(n):
         names[i]=int(names[i])
 
-    matrice = np.loadtxt(path_count_matrix) #MATRICE LOADED
+    matrix = np.loadtxt(path_count_matrix) #MATRICE LOADED
 
     dic_q={}  #INITIALIZING THE DICTIONARY WITH EVERY "qi" = MODEL NUL
 
-    matrice_pij=matrice/np.sum(matrice)
+    matrix_pij=matrix/np.sum(matrix)
     
-    n = len(matrice)
+    n = len(matrix)
     for i in range(n):
-        dic_q[names[i]]=(np.sum(matrice_pij[i])/2)+(matrice_pij[i,i])/2
+        dic_q[names[i]]=(np.sum(matrix_pij[i])/2)+(matrix_pij[i,i])/2
 
-    matrice_triangulaire = np.zeros(matrice.shape) #TRIANGLE
+    matrix_triangulaire = np.zeros(matrix.shape) #TRIANGLE
 
     for i in range(n-1):
         for j in range(i+1, n):
-            matrice_triangulaire[i,j]=round(np.log(matrice_pij[i,j]/(2*dic_q[names[i]]*dic_q[names[j]]))/lamda)
+            matrix_triangulaire[i,j]=round(np.log(matrix_pij[i,j]/(2*dic_q[names[i]]*dic_q[names[j]]))/lamda)
 
     for i in range(n):
-        matrice_triangulaire[i,i]=round(np.log(matrice_pij[i,i]/(dic_q[names[i]]**2))/lamda)
+        matrix_triangulaire[i,i]=round(np.log(matrix_pij[i,i]/(dic_q[names[i]]**2))/lamda)
 
-    matrice_file=open(output_file, "w")
-    for i in matrice_triangulaire:
+    matrix_sym = symmetrize(matrix_triangulaire)
+    
+    matrix_file=open(output_file, "w")
+    for i in matrix_sym:
         for j in i:
-            matrice_file.write(str(j)+" ")
-        matrice_file.write("\n")
+            matrix_file.write(str(j)+" ")
+        matrix_file.write("\n")
     return "Matrix created in"+output_file
 
 
