@@ -16,11 +16,12 @@ class Domain:
 
 ############ Step 1: Soluble domains extraction
 
-#SDE is a function that takes as input the path to a SCOPe file (path_to_scope_file=str), and the path to a folder where you want your results saved (out_folder=str, if not specified, writes in the current directory).
+#SDE is a function that takes as input the path to a SCOPe file (path_to_scope_file=str), and the path to a folder where you want your results saved 
+# (out_folder=str, if not specified, writes in the current directory).
 
 #The output file is called "soluble_domains.txt" and only contains soluble domains.
 #The output file is formated as such: ID	SCOPe	domain	PDB	chain	location
-#There is also 2 variable outputs to this fuction:  SDE(path...) [0]: soluble_domains = every soluble domains under the class Domain created earlier in a list
+#There are also 2 variable outputs to this fuction:  SDE(path...) [0]: soluble_domains = every soluble domains under the class Domain created earlier in a list
 #                                                   SDE(path...) [1]: PDBs =  the list of every PDB code for each domain in the soluble_domains list
 
 #While running this pipeline, you should store those variables respectively under the names "soluble_domains" and "PDBs"
@@ -35,7 +36,6 @@ def SDE(path_to_scope_file,out_folder="."):
 
     for i in range(5):
         line=scope_file.readline()
-
 
     while(line!=""):
         line=line.split("\t")
@@ -66,9 +66,12 @@ def SDE(path_to_scope_file,out_folder="."):
 
 ############ Step 2: Pfam accession codes extraction
 
-#PACE is a fuction that takes as input the path to a PDB/PFAM mapping file (path_to_pdb_pfam_mapping_file=str), a list of domains of interest (soluble_domains=list of Domains), the list of the domains' PDBs that should be sorted in the same order (PDBs=list of str),and the path to a folder where you want your results saved (out_folder=str, if not specified, writes in the current directory).
+#PACE is a fuction that takes as input the path to a PDB/PFAM mapping file (path_to_pdb_pfam_mapping_file=str), 
+# a list of domains of interest (soluble_domains=list of Domains), the list of the domains' PDBs that should be sorted in the same order (PDBs=list of str),
+# and the path to a folder where you want your results saved (out_folder=str, if not specified, writes in the current directory).
 
-#The output file is called "soluble_domains_pfam_accession.txt", and it contains the same thing as the output SDE file but also includes the Pfam accession code for each domains.
+#The output file is called "soluble_domains_pfam_accession.txt", and it contains the same thing as the output SDE file but also includes 
+# the Pfam accession code for each domains.
 #The output file is formated as such: ID	SCOPe	domain	PDB	chain	location Pfam_accession
 
 def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs,out_folder="."):
@@ -81,7 +84,6 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs,out_folder="."):
     columns=line.split()
 
     line=pfam_mapping.readline()
-
 
     while line!="":
 
@@ -107,6 +109,3 @@ def PACE(path_to_pdb_pfam_mapping_file,soluble_domains,PDBs,out_folder="."):
     soluble_domains_with_pfam_file.close()
     pfam_mapping.close()
     return "Soluble domains + Pfam accession codes extracted in \""+out_folder+"/soluble_domains_pfam_accession.txt\""
-
-
-
