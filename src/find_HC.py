@@ -37,12 +37,15 @@ def find_HCs(seq):
         if pos not in pos_P and hc == []:
             hc.append(pos)
             continue
-        elif pos not in pos_P and pos-hc[-1]<4:
+        elif pos not in pos_P and pos-hc[-1]<5:
             hc.append(pos)
             continue
         if len(hc)>1:
             yield hc
-        hc = []
+        if pos not in pos_P:
+            hc = [pos]
+        else:
+            hc = []
     if len(hc)>1:
         yield hc
 
