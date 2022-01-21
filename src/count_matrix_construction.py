@@ -117,8 +117,10 @@ def symmetrize(mat):
 def get_count_matrix(alignments_file, PF_file, HC_counts_file, threshold, output_file, pseudo_count=False):
     print('Preprocessing...')
     data = read_data(alignments_file, PF_file)
+    common_HCs = {}
     file = open(HC_counts_file, 'r')
-    common_HCs = json.load(file)
+    for hc,count in json.load(file).items():
+        common_HCs[int(hc)]=count
     file.close()
     print('done')
     print('Construction ...')
