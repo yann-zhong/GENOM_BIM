@@ -4,8 +4,8 @@ from itertools import combinations
 from src.find_HC import *
 
 ###############################################################################################################################
-# Binarize a sequene specifically to have 1 at HC emplacements
-# input: string sequence and dictionary containing positions of hcs on each sequence
+# Binarize a sequence specifically to have 1 at HC positions
+# input: string sequence and dictionary containing positions of HCs on each sequence
 # output: binary sequence
 def light_HCs(seq, hcs):
     seq = [0]*len(seq)
@@ -14,7 +14,7 @@ def light_HCs(seq, hcs):
             seq[aa]=1
     return seq
 
-# Get all binarized sequences from a dictionary, especially those in repeted sequences
+# Get all binarized sequences from a dictionary, especially those in repeated sequences
 # input: dictionary associating sequence to a list containing the binarized sequence a number of times equal to the number of occurences
 # output: generator of binarized sequences
 def get_binarized_sequences(alignment):
@@ -57,9 +57,9 @@ def find_corresponding_HCs(conserved_pos, seq, HCs):
     for pos in conserved_pos:
         yield list(find_region(pos, HCs[seq][0]))
 
-# Get a the count of appearance of each HC in an list
+# Get the count of appearance of each HC in a list
 # input: list of HCs
-# output: dictionary of each HC associated with its number of appearances
+# output: dictionary of each HC associated with its number of occurences
 def count_hc(substitutes):
     dict_substitutes = dict([(sub, 0) for sub in set(substitutes)])
     for sub in substitutes:
@@ -77,7 +77,7 @@ def add_count(matrix, substitutes):
         matrix[combi[0], combi[1]]+=substitutes[combi[0]]+substitutes[combi[1]]
     return matrix
 
-# Update the matrix with the subsitution counts of an alignment
+# Update the matrix with the substitution counts of an alignment
 # input: numpy matrix, list of lists containing positions of a conserved position and list of the most common HCs
 # output: numpy matrix
 def update_matrix(matrix, conserved_pos, HCs, common_HCs):
@@ -109,8 +109,10 @@ def symmetrize(mat):
     return mat
 
 ###############################################################################################################################
-# Get the count matrix containing all the substitutions that appears in the different alignments on conserved regions
-# input: path to file containing all the alignment, path to file containing all the soluble domains, path to file containing the result of an HC count (obtained by the function "get_analyse()" for example), the coverage threshold, path to the output file, boolean to have a pseudo-count or no
+# Get the count matrix containing all the substitutions that appear in the different alignments on conserved regions
+# input: path to file containing all the alignment, path to file containing all the soluble domains, path to file containing the result of 
+# an HC count (obtained by the function "get_analyse()" for example), the coverage threshold, path to the output file, 
+# boolean to have a pseudo-count or not.
 # output: file containing the matrix and number of conserved regions in all the alignments
 def get_count_matrix(alignments_file, PF_file, HC_counts_file, threshold, output_file, pseudo_count=False):
     print('Preprocessing...')

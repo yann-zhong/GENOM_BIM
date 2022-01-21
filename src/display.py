@@ -1,7 +1,7 @@
 import numpy as np
 from math import *
 
-# Put symbols instead of some amino acids
+# Replace certain amino acids with sequences
 # input: string sequence
 # output: string sequence
 def put_symbols(seq):
@@ -15,7 +15,7 @@ def put_symbols(seq):
         seq = seq.replace(aa, dict_symbols[aa])
     return seq
 
-# display the sequence with a particular form
+# display the sequence in double helix form
 # input: string sequence
 # output: numpy matrix
 def display_matrix(seq):

@@ -2,9 +2,10 @@ import numpy as np
 import os
 import json
 
-# Transform sequence in binary except the P where the "1" represent the contiguous strong hydrophobic amino acids
+# Transforms sequence in binary except "P" where "1" represents contiguous strong hydrophobic amino acids
 # input: string sequence of AA
-# output: string sequence in binary (except the "P")
+# output: string sequence in binary (except "P")
+# P is Proline and is considered a "breaker"; therefore it is not binarized
 def binarization(seq):
     # list of contiguous strong hydrophobic amino acids
     list_aa = ['V', 'I', 'L', 'F', 'M', 'Y', 'W', 'v', 'i', 'l', 'f', 'm', 'y', 'w']
@@ -17,7 +18,7 @@ def binarization(seq):
             yield '0'
 
 # Find all the positions of an element in a sequence
-# input: string sequence in binary (except the "P"), string element to find
+# input: string sequence in binary (except "P"), string element to find
 # output: generator of integer
 def find_x(seq, x):
     for ind,nt in enumerate(seq):
@@ -45,14 +46,14 @@ def find_HCs(seq):
     if len(hc)>1:
         yield hc
 
-# Construct all hc with in binary
+# Binarize all HCs
 # input: list of "1"-position lists
 # output: generator of HC sequence in binary
 def make_hc(positions):
     for hc in positions:
         yield ''.join(['1' if i in hc else '0' for i in range(hc[0], hc[-1]+1)])
 
-# Keep only the extremities of HCs
+# Keep only the extremities of HCs (boundaries)
 # input: list of position lists
 # output: generator of start and end positions
 def keep_limits(positions):
@@ -158,8 +159,8 @@ def get_Q_codes(hc):
             Q_code+='D'
     return Q_code
 
-# Keep only the most present HCs
-# input: dictionary associating HCs to its number of appartitions and the number of HCs kept
+# Keep only the most numerous HCs
+# input: dictionary associating HCs to its number of appearances and the number of HCs kept
 # output: adjusted dictionary associating HCs to its number of occurences
 def filtred_HCs(HCs, n):
     size = len(HCs)
@@ -170,7 +171,7 @@ def filtred_HCs(HCs, n):
             HCs_filtred[hc]=count
     return HCs_filtred
 
-# Find most present HC patterns into soluble domain alignments and give potentially their Q-code
+# Find most present HC patterns inside soluble domain alignments and optionally their Q-codes
 # input: file containing alignments, file containing soluble domains, file for output, number of HCs kept and boolean which indicates if we need the Q-code
 # output: file containing dictionary associating HCs with their number of occurences
 def get_analyse(file_alignements, file_soluble_domains, output_file, nb_HC=500, Q_code=False):
